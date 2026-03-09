@@ -2,6 +2,74 @@ export async function onRequest(context) {
   const { request, env } = context;
 
   if (request.method !== "POST") {
+    return new Response(JSON.stringify({ error: "method_not_allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  try {
+    const apiKey = env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: "missing_api_key" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    const body = await request.json();
+    const userText = (body?.text || "").trim();
+
+    if (!userText) {
+      return new Response(JSON.stringify({ error: "missing_text" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: userText }]
+            }
+          ]
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    return new Response(JSON.stringify({
+      status: response.status,
+      ok: response.ok,
+      data
+    }), {
+      headers: { "Content-Type": "application/json" }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({
+      error: "internal_error",
+      detail: String(error)
+    }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+}
+
+
+/*export async function onRequest(context) {
+  const { request, env } = context;
+
+  if (request.method !== "POST") {
     return new Response(
       JSON.stringify({ error: "method_not_allowed" }),
       { status: 405 }
@@ -58,3 +126,4 @@ ${userText}
   );
 }
 
+*/

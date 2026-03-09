@@ -9,8 +9,7 @@ export async function onRequest(context) {
   }
 
   try {
-    const apiKey = env.GEMINI_API_KEY;
-    const b64 = env.SYSTEM_PROMPT_B64;
+     const systemPrompt = (env.SYSTEM_PROMPT || "").trim();
 
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "missing_api_key" }), {

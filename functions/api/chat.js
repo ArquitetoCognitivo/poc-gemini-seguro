@@ -1,36 +1,23 @@
-export function onRequest(context) {
-  return new Response("Function viva");
-}
+export async function onRequest(context) {
+  const { request, env } = context;
 
-
-/*export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "method_not_allowed" });
+  if (request.method !== "POST") {
+    return new Response(
+      JSON.stringify({ error: "method_not_allowed" }),
+      { status: 405 }
+    );
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  const b64 = process.env.SYSTEM_PROMPT_B64;
+  const apiKey = env.GEMINI_API_KEY;
+  const b64 = env.SYSTEM_PROMPT_B64;
 
-  if (!apiKey) return res.status(500).json({ error: "missing_api_key" });
-  if (!b64) return res.status(500).json({ error: "missing_system_prompt" });
+  const systemPrompt = atob(b64).trim();
 
-  const systemPrompt = Buffer.from(b64, "base64").toString("utf8").trim();
-  const userText = (req.body?.text || "").trim();
+  const body = await request.json();
+  const userText = (body?.text || "").trim();
 
-  if (!userText) return res.status(400).json({ error: "missing_text" });
-
-  // ✅ Camada automática de elevação (genérica, serve para qualquer pergunta)
   const enhancedUserText = `
 Você está operando como um Executive Strategic Advisor de alto nível.
-
-Regras de resposta:
-- Estruture sempre em blocos claros
-- Traga contexto de mercado global quando aplicável
-- Traga referência comparativa executiva quando aplicável
-- Traga implicação financeira aproximada quando fizer sentido
-- Priorize aplicabilidade prática
-- Evite retórica excessiva
-- Seja direto e denso
 
 Pergunta do usuário:
 ${userText}
@@ -41,7 +28,9 @@ ${userText}
 
   const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json"
+    },
     body: JSON.stringify({
       systemInstruction: {
         parts: [{ text: systemPrompt }]
@@ -59,8 +48,12 @@ ${userText}
 
   const answer =
     data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-    data?.error?.message ||
     "sem_resposta";
 
-  return res.status(200).json({ answer });
-}*/
+  return new Response(
+    JSON.stringify({ answer }),
+    {
+      headers: { "Content-Type": "application/json" }
+    }
+  );
+}

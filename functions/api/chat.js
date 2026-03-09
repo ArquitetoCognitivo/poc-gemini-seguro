@@ -1,13 +1,3 @@
-
-
-/*
-BACKUP (código antigo) — cole aqui dentro o conteúdo antigo do chat.js
----------------------------------------------------------------
-1) Primeiro: cole o seu chat.js antigo aqui dentro (pra ficar salvo).
-2) Depois: salve o arquivo.
-3) O código ativo de teste está abaixo do comentário.
----------------------------------------------------------------
-*/
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "method_not_allowed" });
@@ -41,23 +31,24 @@ Pergunta do usuário:
 ${userText}
 `;
 
-const url = "https://api.groq.com;
+  const url =
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
-const response = await fetch(url, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${apiKey}`,
-  },
-  body: JSON.stringify({
-    model: "llama-3.1-8b-instant",
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: enhancedUserText }
-    ],
-    temperature: 0.2
-  }),
-});
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      systemInstruction: {
+        parts: [{ text: systemPrompt }]
+      },
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: enhancedUserText }]
+        }
+      ]
+    })
+  });
 
   const data = await response.json();
 

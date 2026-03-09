@@ -1,4 +1,9 @@
-export default async function handler(req, res) {
+export function onRequest(context) {
+  return new Response("Function viva");
+}
+
+
+/*export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "method_not_allowed" });
   }
@@ -58,4 +63,4 @@ ${userText}
     "sem_resposta";
 
   return res.status(200).json({ answer });
-}
+}*/

@@ -9,7 +9,8 @@ export async function onRequest(context) {
   }
 
   try {
-     const systemPrompt = (env.SYSTEM_PROMPT || "").trim();
+    const apiKey = (env.GEMINI_API_KEY || "").trim();
+    const systemPrompt = (env.SYSTEM_PROMPT || "").trim();
 
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "missing_api_key" }), {
@@ -18,14 +19,12 @@ export async function onRequest(context) {
       });
     }
 
-    if (!b64) {
+    if (!systemPrompt) {
       return new Response(JSON.stringify({ error: "missing_system_prompt" }), {
         status: 500,
         headers: { "Content-Type": "application/json" }
       });
     }
-
-    const systemPrompt = atob(b64).trim();
 
     const body = await request.json();
     const userText = (body?.text || "").trim();
@@ -98,7 +97,6 @@ ${userText}
     );
   }
 }
-
 
 /*export async function onRequest(context) {
   const { request, env } = context;

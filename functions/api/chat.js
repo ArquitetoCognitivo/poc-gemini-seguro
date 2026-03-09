@@ -10,12 +10,23 @@ export async function onRequest(context) {
 
   try {
     const apiKey = env.GEMINI_API_KEY;
+    const b64 = env.SYSTEM_PROMPT_B64;
+
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "missing_api_key" }), {
         status: 500,
         headers: { "Content-Type": "application/json" }
       });
     }
+
+    if (!b64) {
+      return new Response(JSON.stringify({ error: "missing_system_prompt" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    const systemPrompt = atob(b64).trim();
 
     const body = await request.json();
     const userText = (body?.text || "").trim();
@@ -27,6 +38,22 @@ export async function onRequest(context) {
       });
     }
 
+    const enhancedUserText = `
+Você está operando como um Executive Strategic Advisor de alto nível.
+
+Regras de resposta:
+- Estruture sempre em blocos claros
+- Traga contexto de mercado global quando aplicável
+- Traga referência comparativa executiva quando aplicável
+- Traga implicação financeira aproximada quando fizer sentido
+- Priorize aplicabilidade prática
+- Evite retórica excessiva
+- Seja direto e denso
+
+Pergunta do usuário:
+${userText}
+`;
+
     const response = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
       {
@@ -36,9 +63,12 @@ export async function onRequest(context) {
           "x-goog-api-key": apiKey
         },
         body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: systemPrompt }]
+          },
           contents: [
             {
-              parts: [{ text: userText }]
+              parts: [{ text: enhancedUserText }]
             }
           ]
         })
@@ -47,21 +77,26 @@ export async function onRequest(context) {
 
     const data = await response.json();
 
-    return new Response(JSON.stringify({
-      status: response.status,
-      ok: response.ok,
-      data
-    }), {
+    const answer =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      data?.error?.message ||
+      "sem_resposta";
+
+    return new Response(JSON.stringify({ answer }), {
+      status: 200,
       headers: { "Content-Type": "application/json" }
     });
   } catch (error) {
-    return new Response(JSON.stringify({
-      error: "internal_error",
-      detail: String(error)
-    }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+    return new Response(
+      JSON.stringify({
+        error: "internal_error",
+        detail: String(error)
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      }
+    );
   }
 }
 

@@ -1,15 +1,4 @@
-
 export async function onRequest(context) {
-  return new Response(
-    JSON.stringify({ answer: "API OK" }),
-    {
-      headers: { "Content-Type": "application/json" }
-    }
-  );
-}
-
-
-/*export async function onRequest(context) {
   const { request, env } = context;
 
   if (request.method !== "POST") {
@@ -68,4 +57,4 @@ ${userText}
     }
   );
 }
-*/
+
